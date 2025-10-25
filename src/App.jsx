@@ -578,41 +578,48 @@ export default function App() {
   const projects = [
     {
       id: 1,
+      title: "Assistant Diagnostic Cancer du Sein",
+      technologies: "Python · Streamlit · Machine Learning · Scikit-learn",
+      description: "Application IA sophistiquée pour l'analyse et la prédiction de tumeurs mammaires, intégrant machine learning et visualisation interactive des données médicales pour aider au diagnostic.",
+      githubUrl: "https://github.com/emna401/Breast-Cancer-AI-Assistant"
+    },
+    {
+      id: 2,
       title: "Gestion Matériel Informatique",
       technologies: "C# · SQL Server · Windows Forms",
       description: "Application desktop pour gérer le parc matériel (PC, imprimantes, scanners). Fonctionnalités CRUD avec DataGridView, interface moderne avec animations.",
       githubUrl: "https://github.com/emna401/Gestion_de_materiel_informatique"
     },
     {
-      id: 2,
+      id: 3,
       title: "Gestion Scolaire Web",
       technologies: "PHP · MySQL · PDO",
       description: "Application web complète pour gérer élèves, notes et absences. Multi-rôles (admin, directeur, enseignant, parent), génération de rapports PDF.",
       githubUrl: "https://github.com/emna401/Gestion_Scolaire"
     },
     {
-      id: 3,
+      id: 4,
       title: "Site E-commerce InfoShop",
       technologies: "HTML5 · CSS3 · JavaScript",
       description: "Plateforme de vente de matériel informatique avec catalogue, panier et système de commande. Design responsive avec animations CSS, filtres avancés.",
       githubUrl: "https://github.com/emna401/InfoShop-Site-E-Commerce_d-Informatique"
     },
     {
-      id: 4,
+      id: 5,
       title: "Application de Santé",
       technologies: "Flutter · Firebase · Graphiques",
       description: "Application mobile avec calcul d'IMC, suivi de poids et graphiques interactifs. Authentification (email/Google), stockage Firestore.",
       githubUrl: "https://github.com/emna401/Application-Sante-Mobile"
     },
     {
-      id: 5,
+      id: 6,
       title: "Gestion Commerciale",
       technologies: "Java · Swing · MySQL",
       description: "Application desktop de gestion des clients et factures. Fonctionnalités CRUD complètes, calcul automatique des montants, interface intuitive.",
       githubUrl: "https://github.com/emna401/Gestion_commercial"
     },
     {
-      id: 6,
+      id: 7,
       title: "Plateforme de Gestion Budgétaire STEG",
       technologies: "Symfony · Python · Chart.js",
       description: "Algorithme de scoring intelligent, Architecture MVC, visualisation des données avec Chart.js, Workflow complet de validation des besoins.",
