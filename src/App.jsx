@@ -1,955 +1,1496 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import emailjs from '@emailjs/browser';
 import styled, { createGlobalStyle, keyframes } from 'styled-components';
 
-// Animations
-const fadeIn = keyframes`from { opacity: 0; } to { opacity: 1; }`;
-const float = keyframes`
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
-  100% { transform: translateY(0px); }
-`;
-const twinkle = keyframes`
-  0% { opacity: 0.2; }
-  50% { opacity: 1; }
-  100% { opacity: 0.2; }
-`;
-const move = keyframes`
-  0% { transform: translateY(0) translateX(0); }
-  100% { transform: translateY(-100vh) translateX(-20vw); }
-`;
-const rotate = keyframes`
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-`;
-const cometMove = keyframes`
-  0% { 
-    transform: translateX(-100px) translateY(-100px) rotate(-45deg); 
-    opacity: 0;
-  }
-  20% { opacity: 1; }
-  80% { opacity: 1; }
-  100% { 
-    transform: translateX(100vw) translateY(100vh) rotate(-45deg); 
-    opacity: 0;
-  }
+// ===== ANIMATIONS =====
+const fadeIn = keyframes`
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 `;
 
-// Global Styles
+const float = keyframes`
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+`;
+
+const pulse = keyframes`
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+`;
+
+const gradientShift = keyframes`
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+`;
+
+// ===== GLOBAL STYLES =====
 const GlobalStyle = createGlobalStyle`
-  * { 
-    margin:0; 
-    padding:0; 
-    box-sizing:border-box;
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
   }
-  body, html, #root { 
-    height:100%; 
-    width:100%; 
+  
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  
+  body, html, #root {
+    min-height: 100%;
+    width: 100%;
     overflow-x: hidden;
   }
-  body { 
-    font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif; 
-    color:#e0e3e7; 
-    background:#0a0a0a;
+  
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: #e4e4e7;
+    background: #09090b;
     line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
   }
+  
   ::selection {
-    background: rgba(110, 123, 251, 0.4);
+    background: rgba(59, 130, 246, 0.3);
+    color: #fff;
+  }
+  
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: #09090b;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: #27272a;
+    border-radius: 4px;
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: #3b82f6;
   }
 `;
 
-// Background Elements
-const Star = styled.div`
-  position: absolute;
-  background: white;
-  border-radius: 50%;
-  animation: ${twinkle} ${props => props.duration || '5s'} infinite ease-in-out;
-  animation-delay: ${props => props.delay || '0s'};
-`;
-
-const Galaxy = styled.div`
-  position: absolute;
-  width: 60vw;
-  height: 60vw;
-  max-width: 800px;
-  max-height: 800px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(110, 123, 251, 0.03) 0%, transparent 70%);
-  filter: blur(40px);
-  z-index: -2;
-  animation: ${rotate} 120s linear infinite;
-  opacity: 0.6;
-`;
-
-const Particle = styled.div`
-  position: absolute;
-  border-radius: 50%;
-  background: rgba(110, 123, 251, 0.1);
-  filter: blur(2px);
-  animation: ${move} ${props => props.speed || '20s'} linear infinite;
-`;
-
-const Comet = styled.div`
-  position: absolute;
-  width: 150px;
-  height: 2px;
-  background: linear-gradient(90deg, rgba(110, 123, 251, 0), rgba(110, 123, 251, 0.8));
-  border-radius: 50%;
-  filter: blur(1px);
-  animation: ${cometMove} 15s linear infinite;
-  animation-delay: ${props => props.delay || '0s'};
-`;
-
-const AnimatedBackground = () => {
-  const stars = Array.from({ length: 100 }).map((_, i) => {
-    const size = Math.random() * 3;
-    return (
-      <Star
-        key={`star-${i}`}
-        style={{
-          width: `${size}px`,
-          height: `${size}px`,
-          left: `${Math.random() * 100}vw`,
-          top: `${Math.random() * 100}vh`,
-          opacity: Math.random() * 0.8 + 0.2
-        }}
-        duration={`${Math.random() * 5 + 3}s`}
-        delay={`${Math.random() * 5}s`}
-      />
-    );
-  });
-
-  const particles = Array.from({ length: 30 }).map((_, i) => {
-    const size = Math.random() * 5 + 1;
-    return (
-      <Particle
-        key={`particle-${i}`}
-        style={{
-          width: `${size}px`,
-          height: `${size}px`,
-          left: `${Math.random() * 100}vw`,
-          top: `${Math.random() * 100}vh`,
-          background: `rgba(${Math.floor(Math.random() * 100 + 156)}, ${Math.floor(Math.random() * 100 + 156)}, 251, ${Math.random() * 0.2 + 0.05})`
-        }}
-        speed={`${Math.random() * 50 + 30}s`}
-      />
-    );
-  });
-
-  const comets = Array.from({ length: 3 }).map((_, i) => (
-    <Comet 
-      key={`comet-${i}`}
-      style={{
-        left: `${Math.random() * 100}px`,
-        top: `${Math.random() * 100}px`,
-      }}
-      delay={`${i * 10}s`}
-    />
-  ));
-
-  return (
-    <>
-      <Galaxy style={{
-        left: '-20%',
-        top: '-20%',
-        background: 'radial-gradient(circle, rgba(110, 123, 251, 0.05) 0%, transparent 70%)'
-      }} />
-      <Galaxy style={{
-        right: '-15%',
-        bottom: '-15%',
-        background: 'radial-gradient(circle, rgba(174, 110, 251, 0.05) 0%, transparent 70%)',
-        animationDirection: 'reverse'
-      }} />
-      {stars}
-      {particles}
-      {comets}
-    </>
-  );
-};
-
+// ===== LAYOUT =====
 const Container = styled.div`
-  display:flex; 
-  flex-direction:column; 
-  min-height:100vh;
+  min-height: 100vh;
   position: relative;
-  overflow: hidden;
-  background: radial-gradient(circle at 20% 30%, rgba(30, 30, 40, 0.8) 0%, rgba(10, 10, 15, 1) 50%);
+  overflow-x: hidden;
+  background: #09090b;
 `;
 
 const Header = styled.header`
-  padding: 1.5rem 5vw;
-  display:flex; 
-  justify-content:space-between; 
-  align-items:center; 
-  position:sticky; 
-  top:0; 
-  z-index:100;
-  background: rgba(10, 10, 15, 0.8);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+  padding: 1.2rem 6vw;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: rgba(9, 9, 11, 0.85);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
   
-  @media (max-width:768px){
-    flex-direction:column; 
-    gap:1rem; 
-    padding:1.5rem;
+  @media (max-width: 768px) {
+    padding: 1rem 4vw;
   }
 `;
 
-const Logo = styled.h1`
-  color:#6e7bfb; 
-  font-size:1.8rem; 
-  font-weight:700; 
-  animation:${fadeIn} 0.8s ease-out;
+const Logo = styled.a`
+  color: #fff;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  cursor: pointer;
+  text-decoration: none;
+  
   span {
-    color:#a1a8f2;
-    font-weight: 300;
+    color: #3b82f6;
   }
 `;
 
 const Nav = styled.nav`
-  display:flex; 
-  gap:2rem; 
-  @media(max-width:768px){
-    gap:1.5rem; 
-    flex-wrap:wrap; 
-    justify-content:center;
-  }
-`;
-
-const NavLink = styled.button`
-  background:none; 
-  border:none; 
-  color:${props => props.active ? '#6e7bfb' : '#b0b5c0'};
-  font-weight:500; 
-  font-size:1rem; 
-  cursor:pointer; 
-  letter-spacing:0.5px;
-  padding:0.5rem 0; 
-  position:relative; 
-  transition:all 0.3s;
-  
-  &::after {
-    content:''; 
-    position:absolute; 
-    bottom:0; 
-    left:0; 
-    width:${props => props.active ? '100%' : '0'};
-    height:2px; 
-    background:linear-gradient(90deg, #6e7bfb, #a1a8f2); 
-    transition:width 0.3s;
-  }
-  
-  &:hover { 
-    color:#6e7bfb; 
-  }
-`;
-
-const Main = styled.main`
-  flex:1; 
-  display:flex; 
-  flex-direction:column; 
-  padding:0 5vw;
-  position: relative;
-  z-index: 1;
-`;
-
-const HeroSection = styled.section`
-  height: calc(100vh - 80px);
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: flex-start;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem 0;
-  position: relative;
+  gap: 2rem;
+  
+  @media (max-width: 768px) {
+    gap: 1.2rem;
+  }
+  
+  @media (max-width: 500px) {
+    display: none;
+  }
 `;
 
-const Section = styled.section`
-  max-width:1200px; 
-  width:100%; 
-  margin:0 auto; 
-  padding:5rem 0; 
-  animation:${fadeIn} 0.8s ease-out;
+const NavLink = styled.a`
+  color: #a1a1aa;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.2s;
   position: relative;
-`;
-
-const Title = styled.h2`
-  font-size: 2.8rem;
-  margin-bottom: 2.5rem;
-  background: linear-gradient(90deg, #6e7bfb, #a1a8f2);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  position: relative;
-  display: inline-block;
+  
+  &:hover {
+    color: #3b82f6;
+  }
   
   &::after {
     content: '';
     position: absolute;
+    bottom: -4px;
     left: 0;
-    bottom: -10px;
-    width: 60px;
-    height: 3px;
-    background: linear-gradient(90deg, #6e7bfb, #a1a8f2);
-    border-radius: 3px;
+    width: 0;
+    height: 1px;
+    background: #3b82f6;
+    transition: width 0.3s;
+  }
+  
+  &:hover::after {
+    width: 100%;
   }
 `;
 
-const Subtitle = styled.h3`
-  font-size: 1.4rem;
-  color: #b0b5c0;
-  margin-bottom: 1.5rem;
-  font-weight: 400;
-`;
-
-const Text = styled.p`
-  font-size:1.1rem; 
-  color:#c0c5d0; 
-  margin-bottom:1.5rem; 
-  line-height:1.8;
-`;
-
-const HighlightText = styled.span`
-  color: #6e7bfb;
-  font-weight: 500;
-`;
-
-const Button = styled.button`
-  background: linear-gradient(135deg, #6e7bfb, #a1a8f2);
-  color: #0a0a0a;
+const MobileMenu = styled.button`
+  display: none;
+  background: none;
   border: none;
-  padding: 0.8rem 2rem;
-  border-radius: 6px;
-  font-weight: 600;
-  font-size: 1rem;
+  color: #fff;
+  font-size: 1.5rem;
   cursor: pointer;
-  transition: all 0.3s;
-  margin-top: 1.5rem;
+  
+  @media (max-width: 500px) {
+    display: block;
+  }
+`;
+
+// ===== HERO SECTION =====
+const HeroSection = styled.section`
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 6vw;
   position: relative;
   overflow: hidden;
-  z-index: 1;
   
   &::before {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(135deg, #a1a8f2, #6e7bfb);
-    opacity: 0;
-    transition: opacity 0.3s;
-    z-index: -1;
+    top: 20%;
+    right: -10%;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.15) 0%, transparent 70%);
+    filter: blur(60px);
+    z-index: 0;
+    animation: ${float} 8s ease-in-out infinite;
   }
   
-  &:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 20px rgba(110, 123, 251, 0.3);
-    
-    &::before {
-      opacity: 1;
-    }
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -10%;
+    left: -10%;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, transparent 70%);
+    filter: blur(60px);
+    z-index: 0;
+    animation: ${float} 10s ease-in-out infinite reverse;
   }
   
-  &:active {
-    transform: translateY(1px);
+  @media (max-width: 768px) {
+    padding: 0 4vw;
   }
 `;
 
-const Card = styled.div`
-  background: rgba(20, 20, 30, 0.6);
-  border-radius: 12px;
-  padding: 2rem;
+const HeroContent = styled.div`
+  max-width: 900px;
+  position: relative;
+  z-index: 1;
+  animation: ${fadeIn} 1s ease-out;
+`;
+
+const Greeting = styled.p`
+  color: #3b82f6;
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin-bottom: 1rem;
+  letter-spacing: 0.5px;
+`;
+
+const HeroTitle = styled.h1`
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -2px;
+  margin-bottom: 1.5rem;
+  background: linear-gradient(135deg, #fff 0%, #a1a1aa 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  
+  span {
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+`;
+
+const HeroSubtitle = styled.h2`
+  font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+  font-weight: 400;
+  color: #a1a1aa;
   margin-bottom: 2rem;
-  border: 1px solid rgba(255,255,255,0.05);
+  line-height: 1.4;
+`;
+
+const HeroText = styled.p`
+  font-size: 1.05rem;
+  color: #71717a;
+  max-width: 600px;
+  margin-bottom: 2.5rem;
+  line-height: 1.8;
+`;
+
+const HeroButtons = styled.div`
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+`;
+
+const PrimaryButton = styled.a`
+  background: #3b82f6;
+  color: #fff;
+  padding: 0.9rem 2rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
   transition: all 0.3s;
-  backdrop-filter: blur(10px);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   
   &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 15px 30px rgba(0,0,0,0.3);
-    border-color: rgba(110, 123, 251, 0.2);
+    background: #2563eb;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
   }
 `;
 
-const ProjectCard = styled(Card)`
+const SecondaryButton = styled.a`
+  background: transparent;
+  color: #e4e4e7;
+  padding: 0.9rem 2rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+  cursor: pointer;
+  border: 1px solid #27272a;
+  transition: all 0.3s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  
+  &:hover {
+    border-color: #3b82f6;
+    color: #3b82f6;
+    transform: translateY(-2px);
+  }
+`;
+
+const CVHeroButton = styled.a`
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: #fff;
+  padding: 0.9rem 2rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  transition: all 0.3s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(34, 197, 94, 0.3);
+  }
+`;
+
+// ===== SECTIONS =====
+const Section = styled.section`
+  padding: 7rem 6vw;
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+  
+  @media (max-width: 768px) {
+    padding: 5rem 4vw;
+  }
+`;
+
+const SectionTitle = styled.h2`
+  font-size: clamp(1.8rem, 4vw, 2.5rem);
+  font-weight: 700;
+  letter-spacing: -1px;
+  margin-bottom: 0.5rem;
+  color: #fff;
+`;
+
+const SectionSubtitle = styled.p`
+  font-size: 1rem;
+  color: #71717a;
+  margin-bottom: 3.5rem;
+  max-width: 600px;
+`;
+
+const AccentLine = styled.div`
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+  border-radius: 3px;
+  margin-bottom: 1.5rem;
+`;
+
+// ===== ABOUT SECTION =====
+const AboutGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: start;
+  
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+    gap: 3rem;
+  }
+`;
+
+const AboutText = styled.div`
+  p {
+    color: #a1a1aa;
+    margin-bottom: 1.5rem;
+    line-height: 1.8;
+    font-size: 1.02rem;
+  }
+  
+  strong {
+    color: #fff;
+    font-weight: 600;
+  }
+  
+  .highlight {
+    color: #3b82f6;
+    font-weight: 500;
+  }
+`;
+
+const InfoCards = styled.div`
   display: flex;
   flex-direction: column;
-  height: 100%;
+  gap: 1.5rem;
+`;
+
+const InfoCard = styled.div`
+  background: #18181b;
+  border: 1px solid #27272a;
+  border-radius: 12px;
+  padding: 1.8rem;
+  transition: all 0.3s;
+  
+  &:hover {
+    border-color: #3b82f6;
+    transform: translateX(5px);
+  }
   
   h3 {
-    color: #6e7bfb;
-    margin-bottom: 1rem;
-    font-size: 1.5rem;
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1.2rem;
     display: flex;
     align-items: center;
-    gap: 0.8rem;
+    gap: 0.6rem;
   }
   
-  .project-footer {
-    display: flex;
-    justify-content: center;
-    margin-top: auto;
-    padding-top: 1.5rem;
+  h3 .icon {
+    color: #3b82f6;
   }
 `;
 
-const InfoCard = styled(Card)`
-  h3 {
-    color: #6e7bfb;
-    margin-bottom: 1.5rem;
-    font-size: 1.3rem;
+const TimelineItem = styled.div`
+  padding-left: 1.5rem;
+  border-left: 2px solid #27272a;
+  position: relative;
+  margin-bottom: 1.5rem;
+  
+  &:last-child {
+    margin-bottom: 0;
   }
-`;
-
-const ExperienceItem = styled.div`
-  margin-bottom: 2rem;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    left: -6px;
+    top: 5px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #3b82f6;
+    border: 2px solid #18181b;
+  }
   
   h4 {
-    color: #a1a8f2;
-    margin-bottom: 0.5rem;
-    font-size: 1.2rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+    color: #fff;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.3rem;
   }
   
   .date {
-    color: #6e7bfb;
-    font-size: 0.9rem;
+    color: #3b82f6;
+    font-size: 0.85rem;
+    font-weight: 500;
     margin-bottom: 0.5rem;
   }
   
   p {
-    color: #b0b5c0;
-    margin: 0.5rem 0;
+    color: #a1a1aa;
+    font-size: 0.92rem;
+    line-height: 1.6;
   }
   
-  ul {
-    margin: 0.5rem 0 0 1.5rem;
-    li {
-      margin-bottom: 0.3rem;
-      color: #b0b5c0;
-    }
+  .honors {
+    color: #22c55e;
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-top: 0.3rem;
   }
 `;
 
+// ===== SKILLS SECTION =====
 const SkillsGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 1.5rem;
-`;
-
-const SkillItem = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-  padding: 0.8rem 1rem;
-  background: rgba(110, 123, 251, 0.1);
-  border-radius: 8px;
-  transition: all 0.3s;
-  border: 1px solid rgba(110, 123, 251, 0.05);
-  
-  &:hover {
-    background: rgba(110, 123, 251, 0.2);
-    transform: translateY(-3px);
-  }
-  
-  span {
-    font-size: 0.95rem;
-    color: #e0e3e7;
-  }
-  
-  img {
-    width: 24px;
-    height: 24px;
-  }
-`;
-
-const ContactInfo = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 2rem;
-  margin-top: 3rem;
 `;
 
-const ContactItem = styled.a`
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1.5rem;
-  background: rgba(20, 20, 30, 0.6);
+const SkillCategory = styled.div`
+  background: #18181b;
+  border: 1px solid #27272a;
   border-radius: 12px;
+  padding: 1.8rem;
   transition: all 0.3s;
-  text-decoration: none;
-  border: 1px solid rgba(255,255,255,0.05);
   
   &:hover {
-    background: rgba(110, 123, 251, 0.1);
+    border-color: #3b82f6;
     transform: translateY(-5px);
-    border-color: rgba(110, 123, 251, 0.2);
   }
   
-  div {
-    h4 {
-      color: #6e7bfb;
-      margin-bottom: 0.3rem;
-    }
-    
-    p {
-      color: #b0b5c0;
-      font-size: 0.9rem;
-    }
+  h3 {
+    color: #fff;
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin-bottom: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
   }
   
-  svg {
-    color: #6e7bfb;
-    font-size: 1.8rem;
-    min-width: 40px;
+  h3 .icon {
+    color: #3b82f6;
+    font-size: 1.2rem;
   }
 `;
 
-const ProjectGrid = styled.div`
+const SkillTags = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+`;
+
+const SkillTag = styled.span`
+  background: #27272a;
+  color: #d4d4d8;
+  padding: 0.4rem 0.9rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  cursor: default;
+  
+  &:hover {
+    background: #3b82f6;
+    color: #fff;
+    transform: translateY(-2px);
+  }
+`;
+
+// ===== PROJECTS SECTION =====
+const ProjectsGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 2rem;
-  margin-top: 2rem;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 1.5rem;
   
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
   }
 `;
 
-const LanguageItem = styled.div`
+const ProjectCard = styled.div`
+  background: #18181b;
+  border: 1px solid #27272a;
+  border-radius: 12px;
+  padding: 1.8rem;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 0.8rem;
+  flex-direction: column;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
   
-  span:first-child {
-    color: #a1a8f2;
-    font-weight: 500;
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.4s;
   }
   
-  span:last-child {
-    color: #6e7bfb;
-    font-size: 0.9rem;
+  &:hover {
+    border-color: #3b82f6;
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    
+    &::before {
+      transform: scaleX(1);
+    }
   }
 `;
 
-const SkillCategory = styled.h4`
-  color: #a1a8f2;
-  margin: 1.5rem 0 1rem;
-  font-size: 1.1rem;
+const ProjectHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+`;
+
+const ProjectIcon = styled.div`
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(139, 92, 246, 0.15));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #3b82f6;
+  font-size: 1.2rem;
+`;
+
+const ProjectCategory = styled.span`
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 0.3rem 0.7rem;
+  border-radius: 4px;
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+`;
+
+const ProjectTitle = styled.h3`
+  color: #fff;
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-bottom: 0.8rem;
+`;
+
+const ProjectDescription = styled.p`
+  color: #a1a1aa;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  margin-bottom: 1.2rem;
+  flex: 1;
+`;
+
+const ProjectTech = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 1.5rem;
+`;
+
+const TechTag = styled.span`
+  background: #27272a;
+  color: #a1a1aa;
+  padding: 0.25rem 0.7rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
   font-weight: 500;
 `;
 
-const labelStyle = {
-  display: 'block',
-  marginBottom: '0.5rem',
-  color: '#b0b5c0',
-  fontSize: '0.9rem',
-  fontWeight: '500'
-};
-
-const inputStyle = {
-  width: '100%',
-  padding:'0.8rem 1rem', 
-  borderRadius:'8px', 
-  border:'1px solid rgba(255,255,255,0.1)',
-  background:'rgba(10, 10, 15, 0.5)', 
-  color:'#e0e3e7',
-  fontSize: '1rem',
-  transition: 'all 0.3s',
+const ProjectLink = styled.a`
+  color: #3b82f6;
+  text-decoration: none;
+  font-size: 0.88rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: gap 0.2s;
   
-  ':focus': {
-    outline: 'none',
-    borderColor: '#6e7bfb',
-    boxShadow: '0 0 0 3px rgba(110, 123, 251, 0.1)',
-    background: 'rgba(10, 10, 15, 0.7)'
+  &:hover {
+    gap: 0.7rem;
   }
-};
+`;
 
-export default function App() {
-  const [active, setActive] = useState('Accueil'); // Changé de 'home' à 'Accueil'
-  const form = useRef();
+// ===== CONTACT SECTION =====
+const ContactGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
   
+  @media (max-width: 900px) {
+    grid-template-columns: 1fr;
+    gap: 3rem;
+  }
+`;
+
+const ContactInfo = styled.div`
+  h3 {
+    color: #fff;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+  
+  p {
+    color: #a1a1aa;
+    margin-bottom: 2rem;
+    line-height: 1.7;
+  }
+`;
+
+const ContactMethods = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+`;
+
+const ContactMethod = styled.a`
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.2rem;
+  background: #18181b;
+  border: 1px solid #27272a;
+  border-radius: 10px;
+  text-decoration: none;
+  transition: all 0.3s;
+  
+  &:hover {
+    border-color: #3b82f6;
+    transform: translateX(5px);
+  }
+  
+  .icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: rgba(59, 130, 246, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #3b82f6;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+  
+  .info {
+    h4 {
+      color: #fff;
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 0.2rem;
+    }
+    
+    p {
+      color: #a1a1aa;
+      font-size: 0.85rem;
+      margin: 0;
+    }
+  }
+`;
+
+const ContactForm = styled.form`
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+`;
+
+const FormGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  
+  label {
+    color: #a1a1aa;
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+  
+  input, textarea {
+    background: #18181b;
+    border: 1px solid #27272a;
+    border-radius: 8px;
+    padding: 0.9rem 1rem;
+    color: #fff;
+    font-size: 0.95rem;
+    font-family: inherit;
+    transition: all 0.3s;
+    
+    &:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    &::placeholder {
+      color: #52525b;
+    }
+  }
+  
+  textarea {
+    resize: vertical;
+    min-height: 120px;
+  }
+`;
+
+// ===== FOOTER =====
+const Footer = styled.footer`
+  padding: 3rem 6vw;
+  border-top: 1px solid #27272a;
+  text-align: center;
+  
+  p {
+    color: #71717a;
+    font-size: 0.9rem;
+  }
+  
+  a {
+    color: #3b82f6;
+    text-decoration: none;
+    
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+`;
+
+// ===== APP COMPONENT =====
+export default function App() {
+  const form = useRef();
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 50);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollTo = (id) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+      setMobileMenuOpen(false);
+    }
+  };
+
+  const sendEmail = (e) => {
+    e.preventDefault();
+    emailjs
+      .sendForm(
+        'service_gsnnxfa',
+        'template_kuszp9i',
+        form.current,
+        'OeQ2G0vylhEYgX4zS'
+      )
+      .then(
+        () => {
+          alert('Message envoyé avec succès !');
+          form.current.reset();
+        },
+        (err) => {
+          alert("Erreur lors de l'envoi du message");
+          console.error(err);
+        }
+      );
+  };
+
+  // ===== PROJETS COMPLETS (21 projets) =====
   const projects = [
+    // ===== DÉVELOPPEMENT =====
     {
       id: 1,
       title: "Assistant Diagnostic Cancer du Sein",
-      technologies: "Python · Streamlit · Machine Learning · Scikit-learn",
-      description: "Application IA sophistiquée pour l'analyse et la prédiction de tumeurs mammaires, intégrant machine learning et visualisation interactive des données médicales pour aider au diagnostic.",
-      githubUrl: "https://github.com/emna401/Breast-Cancer-AI-Assistant"
+      category: "IA",
+      icon: "🧠",
+      technologies: ["Python", "Streamlit", "Machine Learning", "scikit-learn"],
+      description:
+        "Application IA sophistiquée pour l'analyse et la prédiction de tumeurs mammaires, intégrant machine learning et visualisation interactive de données médicales.",
+      githubUrl: "https://github.com/emna401/Breast-Cancer-AI-Assistant",
     },
     {
       id: 2,
-      title: "Gestion Matériel Informatique",
-      technologies: "C# · SQL Server · Windows Forms",
-      description: "Application desktop pour gérer le parc matériel (PC, imprimantes, scanners). Fonctionnalités CRUD avec DataGridView, interface moderne avec animations.",
-      githubUrl: "https://github.com/emna401/Gestion_de_materiel_informatique"
+      title: "AgriCycle - Application Web Full-Stack",
+      category: "Web",
+      icon: "🌱",
+      technologies: ["React.js", "Django", "MySQL", "JWT", "bcrypt"],
+      description:
+        "Application web responsive avec authentification sécurisée, géolocalisation, export Excel/PDF et interface multilingue (Français/Derja).",
+      githubUrl: "https://github.com/emna401/AgriCycle",
     },
     {
       id: 3,
-      title: "Gestion Scolaire Web",
-      technologies: "PHP · MySQL · PDO",
-      description: "Application web complète pour gérer élèves, notes et absences. Multi-rôles (admin, directeur, enseignant, parent), génération de rapports PDF.",
-      githubUrl: "https://github.com/emna401/Gestion_Scolaire"
+      title: "Gestion Budgétaire STEG",
+      category: "Web",
+      icon: "💰",
+      technologies: ["Symfony", "Python", "Chart.js", "IA"],
+      description:
+        "Plateforme de gestion budgétaire avec recommandations via IA, tableaux de bord interactifs et prévisions analytiques.",
+      githubUrl: "https://github.com/emna401/gestion-budget",
     },
     {
       id: 4,
-      title: "Site E-commerce InfoShop",
-      technologies: "HTML5 · CSS3 · JavaScript",
-      description: "Plateforme de vente de matériel informatique avec catalogue, panier et système de commande. Design responsive avec animations CSS, filtres avancés.",
-      githubUrl: "https://github.com/emna401/InfoShop-Site-E-Commerce_d-Informatique"
+      title: "Gestion Scolaire Web",
+      category: "Web",
+      icon: "🎓",
+      technologies: ["PHP", "MySQL", "PDO"],
+      description:
+        "Application web complète pour gérer élèves, notes et absences. Multi-rôles (admin, directeur, enseignant, parent), génération de rapports PDF.",
+      githubUrl: "https://github.com/emna401/Gestion_Scolaire",
     },
     {
       id: 5,
-      title: "Application de Santé",
-      technologies: "Flutter · Firebase · Graphiques",
-      description: "Application mobile avec calcul d'IMC, suivi de poids et graphiques interactifs. Authentification (email/Google), stockage Firestore.",
-      githubUrl: "https://github.com/emna401/Application-Sante-Mobile"
+      title: "Site E-commerce InfoShop",
+      category: "Web",
+      icon: "🛒",
+      technologies: ["HTML5", "CSS3", "JavaScript"],
+      description:
+        "Plateforme de vente de matériel informatique avec catalogue, panier et système de commande. Design responsive avec animations CSS.",
+      githubUrl: "https://github.com/emna401/InfoShop-Site-E-Commerce_d-Informatique",
     },
     {
       id: 6,
-      title: "Gestion Commerciale",
-      technologies: "Java · Swing · MySQL",
-      description: "Application desktop de gestion des clients et factures. Fonctionnalités CRUD complètes, calcul automatique des montants, interface intuitive.",
-      githubUrl: "https://github.com/emna401/Gestion_commercial"
+      title: "Application Santé Mobile",
+      category: "Mobile",
+      icon: "💚",
+      technologies: ["Flutter", "Firebase", "fl_chart"],
+      description:
+        "Application mobile avec calcul d'IMC, suivi de poids et graphiques interactifs. Authentification (email/Google), stockage Firestore.",
+      githubUrl: "https://github.com/emna401/Application-Sante-Mobile",
     },
     {
       id: 7,
-      title: "Plateforme de Gestion Budgétaire STEG",
-      technologies: "Symfony · Python · Chart.js",
-      description: "Algorithme de scoring intelligent, Architecture MVC, visualisation des données avec Chart.js, Workflow complet de validation des besoins.",
-      githubUrl: "https://github.com/emna401/gestion-budget"
-    }
-  ];
+      title: "Gestion de Matériel Informatique",
+      category: "Desktop",
+      icon: "🖥️",
+      technologies: ["C#", "SQL Server", "Windows Forms"],
+      description:
+        "Application desktop pour gérer le parc matériel (PC, imprimantes, scanners). Fonctionnalités CRUD complètes avec interface moderne.",
+      githubUrl: "https://github.com/emna401/Gestion_de_materiel_informatique",
+    },
+    {
+      id: 8,
+      title: "Gestion Commerciale Java",
+      category: "Desktop",
+      icon: "📊",
+      technologies: ["Java", "Swing", "MySQL"],
+      description:
+        "Application desktop de gestion des clients et factures. Fonctionnalités CRUD complètes, calcul automatique des montants.",
+      githubUrl: "https://github.com/emna401/Gestion_commercial",
+    },
 
-  const sendEmail = e => {
-    e.preventDefault();
-    emailjs.sendForm('service_gsnnxfa','template_kuszp9i',form.current,'OeQ2G0vylhEYgX4zS')
-      .then(_=>{
-        alert('Message envoyé avec succès !'); 
-        form.current.reset();
-      }, err=>{
-        alert('Erreur lors de l\'envoi du message');
-        console.error(err);
-      });
-  };
+    // ===== CYBERSÉCURITÉ =====
+    {
+      id: 9,
+      title: "Scanner SMB Intelligent",
+      category: "Cybersécurité",
+      icon: "🔍",
+      technologies: ["Python", "SMB", "PyQt5", "Regex"],
+      description:
+        "Outil de pentesting qui scanne les partages SMB pour détecter mots de passe et clés API exposés. Multi-threading, détection PII, rapports HTML/JSON.",
+      githubUrl: "https://github.com/emna401/smb-scanner",
+    },
+    {
+      id: 10,
+      title: "Plateforme d'orchestration de pentest",
+      category: "Cybersécurité",
+      icon: "⚔️",
+      technologies: ["Python", "Kali Linux", "API REST", "Jinja2"],
+      description:
+        "Orchestration de Nmap, Nikto, SQLmap et Metasploit avec génération de rapports CVSS et analyse comparative avec la base NIST.",
+      githubUrl: "https://github.com/emna401/pentest-platform",
+    },
+    {
+      id: 11,
+      title: "AWS Security Group Auditor",
+      category: "Cybersécurité",
+      icon: "☁️",
+      technologies: ["Python", "Boto3", "AWS", "IAM"],
+      description:
+        "Audit automatisé des Security Groups AWS avec détection des règles trop permissives (0.0.0.0/0) et classification des ports dangereux.",
+      githubUrl: "https://github.com/emna401/aws-security-auditor",
+    },
+    {
+      id: 12,
+      title: "C2 Server",
+      category: "Cybersécurité",
+      icon: "🖥️",
+      technologies: ["Python", "Flask", "SQLite", "SocketIO"],
+      description:
+        "Serveur Command & Control avec interface web, gestion multi-agents, keylogger, screenshot, persistance et API REST.",
+      githubUrl: "https://github.com/emna401/c2-server",
+    },
+    {
+      id: 13,
+      title: "Lab SNMP - Supervision Réseau",
+      category: "Cybersécurité",
+      icon: "📡",
+      technologies: ["SNMP", "InfluxDB", "Grafana", "Bash"],
+      description:
+        "Solution complète de supervision réseau avec collecte de métriques, stockage InfluxDB, dashboard Grafana et alertes automatiques.",
+      githubUrl: "https://github.com/emna401/snmp-lab",
+    },
+    {
+      id: 14,
+      title: "Lab Intégrateur d'Infrastructure",
+      category: "Cybersécurité",
+      icon: "🏗️",
+      technologies: ["Ubuntu", "Kali", "LDAP", "Kerberos", "Samba", "OpenVPN"],
+      description:
+        "Infrastructure complète pour PME : DNS, DHCP, LDAP, Kerberos, Samba, RAID 5, NFS, Nginx, Apache, Squid, Keycloak, OpenVPN, Fail2ban, Nagios, Ansible.",
+      githubUrl: "https://github.com/emna401/lab-integrator",
+    },
+
+    // ===== IA & SÉCURITÉ =====
+    {
+      id: 15,
+      title: "Système de Reconnaissance d'Empreintes Digitales",
+      category: "IA & Sécurité",
+      icon: "🔐",
+      technologies: ["Python", "OpenCV", "FastAPI", "PostgreSQL", "Docker", "Kubernetes"],
+      description:
+        "Système biométrique complet : acquisition, traitement d'image (CLAHE, Gabor), extraction de minuties (Crossing Number), matching, chiffrement AES-256, JWT, TOTP, blockchain et analytics.",
+      githubUrl: "https://github.com/emna401/fingerprint-recognition",
+    },
+    {
+      id: 16,
+      title: "Person Recognition Pro",
+      category: "IA & Sécurité",
+      icon: "👁️",
+      technologies: ["Python", "InsightFace", "ArcFace", "Flask", "Cryptography"],
+      description:
+        "Système de reconnaissance biométrique par IA : détection faciale, reconnaissance ArcFace 512D, anti-spoofing (EAR), tracking, détection d'accessoires et dashboard web.",
+      githubUrl: "https://github.com/emna401/person-recognition",
+    },
+    {
+      id: 17,
+      title: "Gesture Synth Pro",
+      category: "IA & Vision",
+      icon: "🎵",
+      technologies: ["Python", "MediaPipe", "OpenCV", "NumPy", "SoundDevice", "MIDI"],
+      description:
+        "Instrument de musique virtuel par vision par ordinateur : détection des mains, classification de gestes, synthèse audio temps réel et sortie MIDI professionnelle.",
+      githubUrl: "https://github.com/emna401/gesture-synth",
+    },
+    {
+      id: 18,
+      title: "Audit Technique - Lab Personnel",
+      category: "Cybersécurité",
+      icon: "🔍",
+      technologies: ["Nmap", "Metasploit", "Lynis", "enum4linux"],
+      description:
+        "Audit de sécurité complet sur un lab personnel : reconnaissance, scan, exploitation, post-exploitation et rédaction du rapport final.",
+      githubUrl: "https://github.com/emna401/audit-technique",
+    },
+    {
+      id: 19,
+      title: "Lab CCNA1 - Routeur et VLANs",
+      category: "Réseaux",
+      icon: "🌐",
+      technologies: ["Cisco", "Packet Tracer", "VLANs", "OSPF", "DHCP"],
+      description:
+        "Lab complet avec routeur et VLANs : Router-on-a-Stick, DHCP, OSPF, configuration des switchs et tests de connectivité.",
+      githubUrl: "https://github.com/emna401/lab-ccna1",
+    },
+    {
+      id: 20,
+      title: "Lab CCNA2 - Réseaux d'Entreprise",
+      category: "Réseaux",
+      icon: "🏢",
+      technologies: ["Cisco", "Packet Tracer", "OSPF", "ACLs", "NAT", "SSH"],
+      description:
+        "Réseaux d'entreprise sur 2 sites : VLANs, OSPF, ACLs, SSH, NAT Overload (PAT), Port-Security et DHCP sur routeur.",
+      githubUrl: "https://github.com/emna401/lab-ccna2",
+    },
+    {
+      id: 21,
+      title: "Mini Opérateur Télécom",
+      category: "Réseaux",
+      icon: "📡",
+      technologies: ["Cisco", "BGP", "OSPF", "Packet Tracer"],
+      description:
+        "Simulation de 2 opérateurs télécom interconnectés par BGP avec cœur redondant OSPF, LAN interne avec serveurs DHCP et DNS.",
+      githubUrl: "https://github.com/emna401/mini-operateur-telecom",
+    },
+  ];
 
   return (
     <>
       <GlobalStyle />
       <Container>
-        <AnimatedBackground />
-        
+        {/* ===== HEADER ===== */}
         <Header>
-          <Logo>EMNA<span>DAOUD</span></Logo>
+          <Logo onClick={() => scrollTo('home')}>
+            Emna<span>Daoud</span>
+          </Logo>
           <Nav>
-            {['Accueil','À propos','Projets','Contact'].map(page => (
-              <NavLink 
-                key={page} 
-                active={active===page} 
-                onClick={()=>setActive(page)}
-              >
-                {page}
-              </NavLink>
-            ))}
+            <NavLink onClick={() => scrollTo('home')}>Accueil</NavLink>
+            <NavLink onClick={() => scrollTo('about')}>À propos</NavLink>
+            <NavLink onClick={() => scrollTo('skills')}>Compétences</NavLink>
+            <NavLink onClick={() => scrollTo('projects')}>Projets</NavLink>
+            <NavLink onClick={() => scrollTo('contact')}>Contact</NavLink>
           </Nav>
+          <MobileMenu onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+            ☰
+          </MobileMenu>
         </Header>
-        
-        <Main>
-          {active==='Accueil' && (
-            <HeroSection>
-              <Subtitle>Développeuse Web & Mobile</Subtitle>
-              <Title>Solutions Numériques Innovantes</Title>
-              <Text style={{maxWidth:'700px'}}>
-                Je crée des <HighlightText>applications web et mobiles performantes</HighlightText> avec des technologies modernes.
-                Passionnée par le développement, je cherche à apprendre davantage au sein d'une équipe dynamique.
-              </Text>
-              <div style={{display: 'flex', gap: '1rem'}}>
-                <Button onClick={()=>setActive('Projets')}>Voir mes projets</Button>
-                <Button 
-                  onClick={()=>setActive('Contact')} 
-                  style={{
-                    background: 'transparent', 
-                    border: '1px solid #6e7bfb', 
-                    color: '#6e7bfb'
-                  }}
-                >
+
+        {/* ===== HERO ===== */}
+        <div id="home">
+          <HeroSection>
+            <HeroContent>
+              <Greeting>Bonjour, je suis</Greeting>
+              <HeroTitle>
+                Emna <span>Daoud</span>
+              </HeroTitle>
+              <HeroSubtitle>
+                Développeuse Full-Stack & Cybersécurité
+              </HeroSubtitle>
+              <HeroText>
+                Je crée des applications web et mobiles performantes et je sécurise
+                les systèmes d'information. Passionnée par le développement et la
+                cybersécurité, je cherche à apprendre davantage au sein d'une équipe
+                dynamique.
+              </HeroText>
+              <HeroButtons>
+                <PrimaryButton onClick={() => scrollTo('projects')}>
+                  Voir mes projets →
+                </PrimaryButton>
+                <SecondaryButton onClick={() => scrollTo('contact')}>
                   Me contacter
-                </Button>
-              </div>
-            </HeroSection>
-          )}
-          
-          {active==='À propos' && (
-            <Section>
-              <Title>À propos de moi</Title>
-              <Text style={{maxWidth:'800px', marginBottom: '3rem'}}>
-                Développeuse Web & Mobile curieuse et motivée, avec une première expérience en projets concrets.
-                Je combine mes compétences techniques avec une approche créative pour fournir des solutions efficaces.
-              </Text>
-              
-              <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem'}}>
+                </SecondaryButton>
+                <CVHeroButton 
+                  href="/cv/Emna_Daoud_CV.pdf" 
+                  download
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  📄 Télécharger mon CV
+                </CVHeroButton>
+              </HeroButtons>
+            </HeroContent>
+          </HeroSection>
+        </div>
+
+        {/* ===== ABOUT ===== */}
+        <div id="about">
+          <Section>
+            <AccentLine />
+            <SectionTitle>À propos de moi</SectionTitle>
+            <SectionSubtitle>
+              Mon parcours, ma formation et mes expériences
+            </SectionSubtitle>
+
+            <AboutGrid>
+              <AboutText>
+                <p>
+                  Développeuse <strong>Full-Stack</strong> passionnée par{' '}
+                  <span className="highlight">l'Intelligence Artificielle</span> et
+                  la <span className="highlight">Cybersécurité</span>, actuellement
+                  en <strong>Mastère Professionnel en Audit et Sécurité Informatique</strong>{' '}
+                  à la FSEGS (Faculté des Sciences Économiques et de Gestion de Sfax).
+                </p>
+                <p>
+                  Titulaire d'une <strong>Licence en Informatique de Gestion (mention Bien)</strong>,
+                  j'ai réalisé de nombreux projets couvrant le développement web, mobile
+                  et desktop, l'IA, ainsi que la cybersécurité offensive et défensive.
+                </p>
+                <p>
+                  Mes projets de sécurité — <span className="highlight">plateforme
+                  d'orchestration de pentest</span>, <span className="highlight">scanner
+                  SMB intelligent</span>, <span className="highlight">AWS Security Group
+                  Auditor</span>, <span className="highlight">C2 Server</span> et{' '}
+                  <span className="highlight">lab SNMP</span> — démontrent une maîtrise
+                  avancée des concepts de sécurité, de la supervision réseau et de
+                  l'automatisation.
+                </p>
+              </AboutText>
+
+              <InfoCards>
+                {/* FORMATION */}
                 <InfoCard>
-                  <h3>Formation</h3>
-                  <ExperienceItem>
-                    <h4>
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
-                      </svg>
-                      Licence en Informatique de Gestion
-                    </h4>
+                  <h3>
+                    <span className="icon">🎓</span> Formation
+                  </h3>
+                  <TimelineItem>
+                    <h4>Mastère Professionnel en Audit et Sécurité Informatique</h4>
+                    <p className="date">2025 – en cours</p>
+                    <p>Faculté des Sciences Économiques et de Gestion de Sfax (FSEGS)</p>
+                  </TimelineItem>
+                  <TimelineItem>
+                    <h4>Licence en Informatique de Gestion</h4>
                     <p className="date">2022 – 2025</p>
                     <p>Institut Supérieur d'Administration des Affaires de Sfax</p>
-                    <p>Mention : Bien</p>
-                  </ExperienceItem>
-                  
-                  <ExperienceItem>
-                    <h4>
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-                      </svg>
-                      Baccalauréat Économie & Gestion
-                    </h4>
-                    <p className="date">2017 – 2022</p>
+                    <p className="honors">Mention Bien</p>
+                  </TimelineItem>
+                  <TimelineItem>
+                    <h4>Baccalauréat Économie & Gestion</h4>
+                    <p className="date">2021 – 2022</p>
                     <p>Lycée Mahmoud Megdiche, Sfax</p>
-                    <p>Mention : Assez Bien</p>
-                  </ExperienceItem>
-                </InfoCard>
-                
-                <InfoCard>
-                  <h3>Expériences Professionnelles</h3>
-                  <ExperienceItem>
-                    <h4>Stage de Développement d'application Web</h4>
-                    <p className="date">STEG · 2024 · Sfax</p>
-                    <p>Gestion du budget du centre informatique du STEG</p>
-                    <ul>
-                      <li>Développement d'une application web de gestion budgétaire</li>
-                      <li>Implémentation de tableaux de bord interactifs</li>
-                      <li>Optimisation des processus de suivi des dépenses</li>
-                    </ul>
-                  </ExperienceItem>
-                  
-                  <ExperienceItem>
-                    <h4>Stage de Maintenance Réseau</h4>
-                    <p className="date">Tunisie Télécom · 2020 · Sfax</p>
-                    <ul>
-                      <li>Maintenance d'infrastructure réseau</li>
-                      <li>Diagnostic et résolution de problèmes</li>
-                      <li>Configuration de serveurs et équipements réseau</li>
-                    </ul>
-                  </ExperienceItem>
-                </InfoCard>
-                
-                <InfoCard>
-                  <h3>Compétences Techniques</h3>
-                  
-                  <SkillCategory>Langages de programmation</SkillCategory>
-                  <SkillsGrid>
-                    {['JavaScript', 'Python', 'Java', 'C#', 'PHP', 'Dart', 'HTML5', 'CSS3'].map(skill => (
-                      <SkillItem key={skill}>
-                        <span>{skill}</span>
-                      </SkillItem>
-                    ))}
-                  </SkillsGrid>
-                  
-                  <SkillCategory>Frameworks & Bibliothèques</SkillCategory>
-                  <SkillsGrid>
-                    {['React', 'Symfony', 'Flutter', 'Vite', 'Bootstrap', 'Chart.js'].map(skill => (
-                      <SkillItem key={skill}>
-                        <span>{skill}</span>
-                      </SkillItem>
-                    ))}
-                  </SkillsGrid>
-                  
-                  <SkillCategory>Outils de développement</SkillCategory>
-                  <SkillsGrid>
-                    {['Git', 'Visual Studio Code', 'XAMPP', 'MySQL'].map(skill => (
-                      <SkillItem key={skill}>
-                        <span>{skill}</span>
-                      </SkillItem>
-                    ))}
-                  </SkillsGrid>
+                    <p className="honors">Mention Assez Bien</p>
+                  </TimelineItem>
                 </InfoCard>
 
+                {/* EXPÉRIENCES */}
                 <InfoCard>
-                  <h3>Langues</h3>
-                  <div>
-                    <LanguageItem>
-                      <span>Français</span>
-                      <span>B1</span>
-                    </LanguageItem>
-                    <LanguageItem>
-                      <span>Anglais</span>
-                      <span>B1</span>
-                    </LanguageItem>
-                    <LanguageItem>
-                      <span>Espagnol</span>
-                      <span>A1</span>
-                    </LanguageItem>
-                  </div>
+                  <h3>
+                    <span className="icon">💼</span> Expériences Professionnelles
+                  </h3>
+                  <TimelineItem>
+                    <h4>Stage de Développement d'application Web</h4>
+                    <p className="date">STEG · 2025 · Sfax</p>
+                    <p>
+                      Création d'une plateforme de gestion budgétaire avec
+                      recommandations via IA, tableaux de bord et prévisions analytiques.
+                    </p>
+                  </TimelineItem>
+                  <TimelineItem>
+                    <h4>Stage de Maintenance Réseau</h4>
+                    <p className="date">Tunisie Télécom · 2024 · Sfax</p>
+                    <p>
+                      Maintenance informatique : formatage des postes, installation
+                      des systèmes d'exploitation et configuration réseau.
+                    </p>
+                  </TimelineItem>
                 </InfoCard>
-              </div>
-            </Section>
-          )}
-          
-          {active==='Projets' && (
-            <Section>
-              <Title>Mes Projets</Title>
-              <Text style={{maxWidth:'800px', marginBottom: '3rem'}}>
-                Sélection de mes projets les plus significatifs démontrant mes compétences dans diverses technologies.
-              </Text>
-              
-              <ProjectGrid>
-                {projects.map(project => (
-                  <ProjectCard key={project.id}>
-                    <h3>
-                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                        <line x1="8" y1="21" x2="16" y2="21"></line>
-                        <line x1="12" y1="17" x2="12" y2="21"></line>
-                      </svg>
-                      {project.title}
-                    </h3>
-                    <p className="date">{project.technologies}</p>
-                    <Text>{project.description}</Text>
-                    <div className="project-footer">
-                      <Button 
-                        as="a" 
-                        href={project.githubUrl} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                      >
-                        Voir le projet
-                      </Button>
-                    </div>
-                  </ProjectCard>
-                ))}
-              </ProjectGrid>
-            </Section>
-          )}
-          
-          {active==='Contact' && (
-            <Section>
-              <Title>Contact</Title>
-              <Text style={{maxWidth:'700px', margin:'0 auto 3rem', textAlign:'center'}}>
-                Vous avez un projet ou souhaitez discuter d'opportunités ? Je suis disponible pour des missions freelance et des postes permanents.
-              </Text>
-              
+
+                {/* CERTIFICATIONS */}
+                <InfoCard>
+                  <h3>
+                    <span className="icon">🏅</span> Certifications
+                  </h3>
+                  <TimelineItem>
+                    <h4>Introduction to Responsible AI</h4>
+                    <p className="date">Google · 2025</p>
+                  </TimelineItem>
+                  <TimelineItem>
+                    <h4>Introduction to Image Generation</h4>
+                    <p className="date">Google · 2025</p>
+                  </TimelineItem>
+                  <TimelineItem>
+                    <h4>Introduction à la Cybersécurité</h4>
+                    <p className="date">Cisco Networking Academy · 2025</p>
+                  </TimelineItem>
+                  <TimelineItem>
+                    <h4>Cybersécurité appliquée à la finance</h4>
+                    <p className="date">Udemy · 2026</p>
+                  </TimelineItem>
+                </InfoCard>
+
+                {/* LANGUES */}
+                <InfoCard>
+                  <h3>
+                    <span className="icon">🌍</span> Langues
+                  </h3>
+                  <TimelineItem>
+                    <h4>Arabe</h4>
+                    <p className="date">Langue maternelle</p>
+                  </TimelineItem>
+                  <TimelineItem>
+                    <h4>Français</h4>
+                    <p className="date">B1</p>
+                  </TimelineItem>
+                  <TimelineItem>
+                    <h4>Anglais</h4>
+                    <p className="date">B2</p>
+                  </TimelineItem>
+                  <TimelineItem>
+                    <h4>Espagnol</h4>
+                    <p className="date">A1</p>
+                  </TimelineItem>
+                </InfoCard>
+              </InfoCards>
+            </AboutGrid>
+          </Section>
+        </div>
+
+        {/* ===== SKILLS ===== */}
+        <div id="skills">
+          <Section>
+            <AccentLine />
+            <SectionTitle>Mes Compétences</SectionTitle>
+            <SectionSubtitle>
+              Technologies que j'utilise pour créer des solutions performantes et sécurisées
+            </SectionSubtitle>
+
+            <SkillsGrid>
+              <SkillCategory>
+                <h3>
+                  <span className="icon">💻</span> Langages de programmation
+                </h3>
+                <SkillTags>
+                  {['Python', 'Java', 'C#', 'PHP', 'JavaScript', 'Dart', 'C', 'HTML5', 'CSS3'].map(s => (
+                    <SkillTag key={s}>{s}</SkillTag>
+                  ))}
+                </SkillTags>
+              </SkillCategory>
+
+              <SkillCategory>
+                <h3>
+                  <span className="icon">⚛️</span> Frameworks & Bibliothèques
+                </h3>
+                <SkillTags>
+                  {['React', 'Vue.js', 'Next.js', 'Node.js', 'Express.js', 'Symfony', 'Flutter', 'Chart.js'].map(s => (
+                    <SkillTag key={s}>{s}</SkillTag>
+                  ))}
+                </SkillTags>
+              </SkillCategory>
+
+              <SkillCategory>
+                <h3>
+                  <span className="icon">🗄️</span> Bases de données
+                </h3>
+                <SkillTags>
+                  {['MySQL', 'PostgreSQL', 'MongoDB', 'SQLite', 'Firebase', 'Supabase', 'SQL Server', 'InfluxDB'].map(s => (
+                    <SkillTag key={s}>{s}</SkillTag>
+                  ))}
+                </SkillTags>
+              </SkillCategory>
+
+              <SkillCategory>
+                <h3>
+                  <span className="icon">🔐</span> Cybersécurité
+                </h3>
+                <SkillTags>
+                  {['Kali Linux', 'Nmap', 'Metasploit', 'Wireshark', 'Burp Suite', 'Snort', 'Fail2ban', 'Lynis'].map(s => (
+                    <SkillTag key={s}>{s}</SkillTag>
+                  ))}
+                </SkillTags>
+              </SkillCategory>
+
+              <SkillCategory>
+                <h3>
+                  <span className="icon">☁️</span> DevOps & Cloud
+                </h3>
+                <SkillTags>
+                  {['Git', 'Docker', 'Kubernetes', 'Grafana', 'Nginx', 'Apache', 'AWS'].map(s => (
+                    <SkillTag key={s}>{s}</SkillTag>
+                  ))}
+                </SkillTags>
+              </SkillCategory>
+
+              <SkillCategory>
+                <h3>
+                  <span className="icon">🧠</span> IA & Data
+                </h3>
+                <SkillTags>
+                  {['scikit-learn', 'Matplotlib', 'Streamlit', 'Machine Learning', 'Data Mining'].map(s => (
+                    <SkillTag key={s}>{s}</SkillTag>
+                  ))}
+                </SkillTags>
+              </SkillCategory>
+            </SkillsGrid>
+          </Section>
+        </div>
+
+        {/* ===== PROJECTS ===== */}
+        <div id="projects">
+          <Section>
+            <AccentLine />
+            <SectionTitle>Mes Projets</SectionTitle>
+            <SectionSubtitle>
+              Découvrez mon portfolio de solutions innovantes et d'implémentations créatives
+            </SectionSubtitle>
+
+            <ProjectsGrid>
+              {projects.map((project) => (
+                <ProjectCard key={project.id}>
+                  <ProjectHeader>
+                    <ProjectIcon>{project.icon}</ProjectIcon>
+                    <ProjectCategory>{project.category}</ProjectCategory>
+                  </ProjectHeader>
+                  <ProjectTitle>{project.title}</ProjectTitle>
+                  <ProjectDescription>{project.description}</ProjectDescription>
+                  <ProjectTech>
+                    {project.technologies.map((tech) => (
+                      <TechTag key={tech}>{tech}</TechTag>
+                    ))}
+                  </ProjectTech>
+                  <ProjectLink
+                    href={project.githubUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Voir le projet →
+                  </ProjectLink>
+                </ProjectCard>
+              ))}
+            </ProjectsGrid>
+          </Section>
+        </div>
+
+        {/* ===== CONTACT ===== */}
+        <div id="contact">
+          <Section>
+            <AccentLine />
+            <SectionTitle>Me Contacter</SectionTitle>
+            <SectionSubtitle>
+              Prêt à démarrer votre projet ? Parlons de la façon dont je peux vous aider.
+            </SectionSubtitle>
+
+            <ContactGrid>
               <ContactInfo>
-                <ContactItem href="mailto:daoud.emna.it@gmail.com">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                    <polyline points="22,6 12,13 2,6"></polyline>
-                  </svg>
-                  <div>
-                    <h4>Email</h4>
-                    <p>daoud.emna.it@gmail.com</p>
-                  </div>
-                </ContactItem>
-                
-                <ContactItem href="tel:+21654460458">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
-                  </svg>
-                  <div>
-                    <h4>Téléphone</h4>
-                    <p>+216 54 460 458</p>
-                  </div>
-                </ContactItem>
-                
-                <ContactItem href="https://www.linkedin.com/" target="_blank" rel="noopener noreferrer">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
-                    <rect x="2" y="9" width="4" height="12"></rect>
-                    <circle cx="4" cy="4" r="2"></circle>
-                  </svg>
-                  <div>
-                    <h4>LinkedIn</h4>
-                    <p>linkedin.com/in/emna-daoud</p>
-                  </div>
-                </ContactItem>
-                
-                <ContactItem href="https://github.com/" target="_blank" rel="noopener noreferrer">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
-                  </svg>
-                  <div>
-                    <h4>GitHub</h4>
-                    <p>github.com/emna-daoud</p>
-                  </div>
-                </ContactItem>
+                <h3>Discutons ensemble</h3>
+                <p>
+                  Vous avez un projet ou souhaitez discuter d'opportunités ? Je suis
+                  disponible pour des missions freelance et des postes permanents.
+                </p>
+
+                <ContactMethods>
+                  <ContactMethod href="mailto:daoud.emna.it@gmail.com">
+                    <div className="icon">✉️</div>
+                    <div className="info">
+                      <h4>Email</h4>
+                      <p>daoud.emna.it@gmail.com</p>
+                    </div>
+                  </ContactMethod>
+
+                  <ContactMethod href="tel:+21654460458">
+                    <div className="icon">📞</div>
+                    <div className="info">
+                      <h4>Téléphone</h4>
+                      <p>+216 54 460 458</p>
+                    </div>
+                  </ContactMethod>
+
+                  <ContactMethod
+                    href="https://www.linkedin.com/in/daoud-emna/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <div className="icon">💼</div>
+                    <div className="info">
+                      <h4>LinkedIn</h4>
+                      <p>linkedin.com/in/daoud-emna</p>
+                    </div>
+                  </ContactMethod>
+
+                  <ContactMethod
+                    href="https://github.com/emna401"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <div className="icon">🐙</div>
+                    <div className="info">
+                      <h4>GitHub</h4>
+                      <p>github.com/emna401</p>
+                    </div>
+                  </ContactMethod>
+                </ContactMethods>
               </ContactInfo>
-              
-              <form 
-                ref={form} 
-                onSubmit={sendEmail} 
-                style={{
-                  maxWidth:'600px', 
-                  margin:'4rem auto 0',
-                  padding:'2.5rem',
-                  borderRadius:'12px',
-                  background: 'rgba(20, 20, 30, 0.6)',
-                  border: '1px solid rgba(255,255,255,0.05)',
-                  backdropFilter: 'blur(10px)'
-                }}
-              >
-                <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem'}}>
-                  <div>
-                    <label htmlFor="name" style={labelStyle}>Votre Nom</label>
-                    <input 
-                      id="name"
-                      name="user_name" 
-                      type="text" 
-                      required 
-                      style={inputStyle} 
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="email" style={labelStyle}>Votre Email</label>
-                    <input 
-                      id="email"
-                      name="user_email" 
-                      type="email" 
-                      required 
-                      style={inputStyle} 
-                    />
-                  </div>
-                </div>
-                
-                <div style={{marginBottom: '1.5rem'}}>
-                  <label htmlFor="subject" style={labelStyle}>Sujet</label>
-                  <input 
+
+              <ContactForm ref={form} onSubmit={sendEmail}>
+                <FormGroup>
+                  <label htmlFor="name">Votre nom</label>
+                  <input
+                    id="name"
+                    name="user_name"
+                    type="text"
+                    required
+                    placeholder="Jean Dupont"
+                  />
+                </FormGroup>
+
+                <FormGroup>
+                  <label htmlFor="email">Votre email</label>
+                  <input
+                    id="email"
+                    name="user_email"
+                    type="email"
+                    required
+                    placeholder="jean@exemple.com"
+                  />
+                </FormGroup>
+
+                <FormGroup>
+                  <label htmlFor="subject">Sujet</label>
+                  <input
                     id="subject"
-                    name="subject" 
-                    type="text" 
-                    required 
-                    style={inputStyle} 
+                    name="subject"
+                    type="text"
+                    required
+                    placeholder="Proposition de collaboration"
                   />
-                </div>
-                
-                <div style={{marginBottom: '1.5rem'}}>
-                  <label htmlFor="message" style={labelStyle}>Message</label>
-                  <textarea 
+                </FormGroup>
+
+                <FormGroup>
+                  <label htmlFor="message">Message</label>
+                  <textarea
                     id="message"
-                    name="message" 
-                    placeholder="Votre message ici..." 
-                    rows="6" 
-                    required 
-                    style={{...inputStyle, minHeight: '150px'}} 
+                    name="message"
+                    required
+                    placeholder="Votre message ici..."
                   />
-                </div>
-                
-                <Button type="submit" style={{width: '100%'}}>Envoyer le message</Button>
-              </form>
-            </Section>
-          )}
-        </Main>
+                </FormGroup>
+
+                <PrimaryButton type="submit" style={{ width: '100%', justifyContent: 'center' }}>
+                  Envoyer le message →
+                </PrimaryButton>
+              </ContactForm>
+            </ContactGrid>
+          </Section>
+        </div>
+
+        {/* ===== FOOTER ===== */}
+        <Footer>
+          <p>
+            © {new Date().getFullYear()} Emna Daoud · Développé avec ❤️ en React ·
+            <a href="https://github.com/emna401" target="_blank" rel="noopener noreferrer"> GitHub</a>
+          </p>
+        </Footer>
       </Container>
     </>
   );
