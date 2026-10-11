@@ -36,7 +36,6 @@ const GlobalStyle = createGlobalStyle`
     scroll-behavior: smooth;
   }
   
-  
   body, html, #root {
     min-height: 100%;
     width: 100%;
@@ -1432,12 +1431,13 @@ export default function App() {
                 </ContactMethods>
               </ContactInfo>
 
+              {/* ===== FORMULAIRE CORRIGÉ ===== */}
               <ContactForm ref={form} onSubmit={sendEmail}>
                 <FormGroup>
                   <label htmlFor="name">Votre nom</label>
                   <input
                     id="name"
-                    name="user_name"
+                    name="name"
                     type="text"
                     required
                     placeholder="Jean Dupont"
@@ -1448,7 +1448,7 @@ export default function App() {
                   <label htmlFor="email">Votre email</label>
                   <input
                     id="email"
-                    name="user_email"
+                    name="email"
                     type="email"
                     required
                     placeholder="jean@exemple.com"
@@ -1459,7 +1459,7 @@ export default function App() {
                   <label htmlFor="subject">Sujet</label>
                   <input
                     id="subject"
-                    name="subject"
+                    name="title"
                     type="text"
                     required
                     placeholder="Proposition de collaboration"
